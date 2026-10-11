@@ -26,7 +26,9 @@ export const routes: Routes = [
     canActivate:[authGuard],
     children: [
       { path: 'indent', loadComponent: () => import('./components/item-list/item-list.component').then(m => m.ItemListComponent) },
-      { path: 'po', loadComponent: () => import('./components/item-list/item-list.component').then(m => m.ItemListComponent) },
+      { path: 'po', loadComponent: () => import('./components/purchase-order/po-list/po-list.component').then(m => m.PoListComponent) },
+      { path: 'po/create', loadComponent: () => import('./components/purchase-order/po-form/po-form.component').then(m => m.PoFormComponent) },
+      { path: 'po/edit/:id', loadComponent: () => import('./components/purchase-order/po-form/po-form.component').then(m => m.PoFormComponent) },
       { path: 'inward', loadComponent: () => import('./components/item-list/item-list.component').then(m => m.ItemListComponent) },
       { path: 'receipt', loadComponent: () => import('./components/item-list/item-list.component').then(m => m.ItemListComponent) }
     ]

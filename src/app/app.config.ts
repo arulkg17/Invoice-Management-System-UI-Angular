@@ -1,4 +1,5 @@
 import { ApplicationConfig } from '@angular/core';
+import { provideNativeDateAdapter } from '@angular/material/core';
 
 import {
   provideHttpClient,
@@ -20,7 +21,7 @@ import { JwtInterceptor } from './services/jwt.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-
+    provideNativeDateAdapter(),
     // Router
     provideRouter(routes),
 
