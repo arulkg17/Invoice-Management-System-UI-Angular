@@ -1,0 +1,95 @@
+
+<h2 mat-dialog-title>
+  {{ isEdit ? 'Edit Customer' : 'Add Customer' }}
+</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="customer-form">
+    <mat-form-field appearance="outline">
+      <mat-label>Customer Code</mat-label>
+      <input matInput formControlName="customerCode" />
+      <mat-error *ngIf="form.controls.customerCode.hasError('required')">
+        Customer Code is required
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Customer Name</mat-label>
+      <input matInput formControlName="customerName" />
+      <mat-error *ngIf="form.controls.customerName.hasError('required')">
+        Customer Name is required
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Contact Person</mat-label>
+      <input matInput formControlName="contactPerson" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Mobile Number</mat-label>
+      <input matInput formControlName="mobileNo" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Email</mat-label>
+      <input matInput type="email" formControlName="email" />
+      <mat-error *ngIf="form.controls.email.hasError('email')">
+        Enter a valid email address
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>GST Number</mat-label>
+      <input matInput formControlName="gstNo" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Address 1</mat-label>
+      <input matInput formControlName="address1" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Address 2</mat-label>
+      <input matInput formControlName="address2" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>City</mat-label>
+      <input matInput formControlName="city" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>State</mat-label>
+      <input matInput formControlName="state" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Country</mat-label>
+      <input matInput formControlName="country" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>ZIP / Postal Code</mat-label>
+      <input matInput formControlName="zipCode" />
+    </mat-form-field>
+
+    <mat-checkbox formControlName="isActive">
+      Active
+    </mat-checkbox>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">Cancel</button>
+
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    [disabled]="saving"
+    (click)="save()"
+  >
+    {{ saving ? 'Saving...' : (isEdit ? 'Update' : 'Save') }}
+  </button>
+</mat-dialog-actions>
