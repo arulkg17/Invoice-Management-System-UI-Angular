@@ -1,0 +1,67 @@
+<div class="page">
+  <div class="page-header">
+    <h2>Stock</h2>
+
+    <button mat-stroked-button type="button" (click)="load()">
+      <mat-icon>refresh</mat-icon>
+      Refresh
+    </button>
+  </div>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search">
+    <mat-label>Search item</mat-label>
+    <input
+      matInput
+      [value]="search()"
+      (input)="onSearch($event)"
+      placeholder="Code or name..."
+    />
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  <table mat-table [dataSource]="filtered()" class="mat-elevation-z4">
+    <ng-container matColumnDef="itemCode">
+      <th mat-header-cell *matHeaderCellDef>Item Code</th>
+      <td mat-cell *matCellDef="let r">{{ r.itemCode }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="itemName">
+      <th mat-header-cell *matHeaderCellDef>Item Name</th>
+      <td mat-cell *matCellDef="let r">{{ r.itemName }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="receivedQuantity">
+      <th mat-header-cell *matHeaderCellDef class="num">Received</th>
+      <td mat-cell *matCellDef="let r" class="num">
+        {{ r.receivedQuantity | number: "1.0-2" }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="soldQuantity">
+      <th mat-header-cell *matHeaderCellDef class="num">Sold</th>
+      <td mat-cell *matCellDef="let r" class="num">
+        {{ r.soldQuantity | number: "1.0-2" }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="onHandQuantity">
+      <th mat-header-cell *matHeaderCellDef class="num">On Hand</th>
+      <td mat-cell *matCellDef="let r" class="num on-hand">
+        <span [class.zero]="r.onHandQuantity <= 0">
+          {{ r.onHandQuantity | number: "1.0-2" }}
+        </span>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+  </table>
+
+  @if (!isLoading() && filtered().length === 0) {
+    <div class="empty">No items found.</div>
+  }
+</div>

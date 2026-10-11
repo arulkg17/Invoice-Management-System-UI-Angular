@@ -1,0 +1,340 @@
+<div class="page">
+  <div class="page-header">
+    <h2>{{ title() }}</h2>
+
+    @if (isEdit()) {
+      <span class="status-badge" [class]="statusClass()">{{ status() }}</span>
+    }
+  </div>
+
+  @if (isReadOnly()) {
+    <div class="banner">
+      This sales invoice is <b>{{ status() }}</b>, so it is read only. Only
+      <b>Draft</b> invoices can be edited.
+    </div>
+  }
+
+  @if (!isReadOnly() && anyShort()) {
+    <div class="warn-box">
+      Some items ask for more than the stock on hand. You can still save the
+      draft, but <b>Post</b> will be refused until stock is available.
+    </div>
+  }
+
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <!-- ================= HEADER ================= -->
+    <div class="header-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Invoice Number</mat-label>
+        <input matInput formControlName="invoiceNumber" appSelectOnFocus />
+        @if (!isEdit()) {
+          <mat-hint>Leave blank to auto-generate (INV-000001)</mat-hint>
+        }
+        @if (form.controls.invoiceNumber.hasError("maxlength")) {
+          <mat-error>Maximum 30 characters allowed</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Customer</mat-label>
+        <mat-select formControlName="customerId">
+          @for (customer of customers(); track customer.id) {
+            <mat-option [value]="customer.id">
+              {{ customer.customerCode }} - {{ customer.customerName }}
+              @if (customer.isActive === false) {
+                (Inactive)
+              }
+            </mat-option>
+          }
+        </mat-select>
+        @if (form.controls.customerId.hasError("required")) {
+          <mat-error>Customer is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Invoice Date</mat-label>
+        <input
+          matInput
+          [matDatepicker]="invoiceDatePicker"
+          formControlName="invoiceDate"
+        />
+        <mat-datepicker-toggle
+          matIconSuffix
+          [for]="invoiceDatePicker"
+        ></mat-datepicker-toggle>
+        <mat-datepicker #invoiceDatePicker></mat-datepicker>
+        @if (form.controls.invoiceDate.hasError("required")) {
+          <mat-error>Invoice date is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Due Date (optional)</mat-label>
+        <input matInput [matDatepicker]="dueDatePicker" formControlName="dueDate" />
+        @if (form.controls.dueDate.value && !isReadOnly()) {
+          <button
+            matSuffix
+            mat-icon-button
+            type="button"
+            matTooltip="Clear due date"
+            (click)="clearDueDate()"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+        <mat-datepicker-toggle
+          matIconSuffix
+          [for]="dueDatePicker"
+        ></mat-datepicker-toggle>
+        <mat-datepicker #dueDatePicker></mat-datepicker>
+        @if (form.hasError("dueBeforeInvoice")) {
+          <mat-error>Due date cannot be earlier than the invoice date</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="notes">
+        <mat-label>Notes</mat-label>
+        <textarea matInput formControlName="notes" rows="2"></textarea>
+        @if (form.controls.notes.hasError("maxlength")) {
+          <mat-error>Maximum 500 characters allowed</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <!-- ================= LINES ================= -->
+    <div class="lines-header">
+      <h3>Items</h3>
+
+      @if (!isReadOnly()) {
+        <button mat-stroked-button type="button" (click)="addLine()">
+          <mat-icon>add</mat-icon>
+          Add Item
+        </button>
+      }
+    </div>
+
+    @if (lines.hasError("noLines") && form.touched) {
+      <div class="error-line">Add at least one item.</div>
+    }
+
+    <div class="table-wrap">
+      <table class="lines" formArrayName="details">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th class="item-col">Item</th>
+            @if (!isReadOnly()) {
+              <th class="num">On hand</th>
+            }
+            <th>Quantity</th>
+            <th>Rate</th>
+            <th>Discount</th>
+            <th>Tax %</th>
+            <th class="num">Tax Amount</th>
+            <th class="num">Line Total</th>
+            @if (!isReadOnly()) {
+              <th></th>
+            }
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (line of lines.controls; track line; let i = $index) {
+            <tr [formGroupName]="i">
+              <td>{{ i + 1 }}</td>
+
+              <td class="item-col">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-select
+                    formControlName="itemmasterId"
+                    placeholder="Select item"
+                    (selectionChange)="onItemChange(line)"
+                  >
+                    @for (item of items(); track item.id) {
+                      <mat-option [value]="item.id">
+                        {{ itemLabel(item) }}
+                      </mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </td>
+
+              @if (!isReadOnly()) {
+                <td
+                  class="num"
+                  [class.short]="isShort(line.controls.itemmasterId.value)"
+                >
+                  @if (line.controls.itemmasterId.value) {
+                    {{ onHand(line.controls.itemmasterId.value) | number: "1.0-2" }}
+                  } @else {
+                    -
+                  }
+                </td>
+              }
+
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <input
+                    matInput
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    formControlName="quantity"
+                    appSelectOnFocus
+                  />
+                </mat-form-field>
+              </td>
+
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <input
+                    matInput
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    formControlName="rate"
+                    appSelectOnFocus
+                  />
+                </mat-form-field>
+              </td>
+
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <input
+                    matInput
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    formControlName="discountAmount"
+                    appSelectOnFocus
+                  />
+                </mat-form-field>
+              </td>
+
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <input
+                    matInput
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    formControlName="taxPercent"
+                    appSelectOnFocus
+                  />
+                </mat-form-field>
+              </td>
+
+              <td class="num">
+                {{ lineAmounts()[i]?.taxAmount | number: "1.2-2" }}
+              </td>
+
+              <td class="num strong">
+                {{ lineAmounts()[i]?.lineTotal | number: "1.2-2" }}
+              </td>
+
+              @if (!isReadOnly()) {
+                <td>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    color="warn"
+                    matTooltip="Remove item"
+                    (click)="removeLine(i)"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              }
+            </tr>
+
+            @if (line.touched && line.invalid) {
+              <tr class="error-row">
+                <td></td>
+                <td [attr.colspan]="isReadOnly() ? 8 : 9">
+                  @if (line.controls.itemmasterId.hasError("required")) {
+                    <span>Select an item. </span>
+                  }
+                  @if (line.controls.quantity.invalid) {
+                    <span>Quantity must be greater than 0. </span>
+                  }
+                  @if (line.controls.rate.invalid) {
+                    <span>Rate cannot be negative. </span>
+                  }
+                  @if (line.controls.discountAmount.invalid) {
+                    <span>Discount cannot be negative. </span>
+                  }
+                  @if (line.controls.taxPercent.invalid) {
+                    <span>Tax % must be between 0 and 100. </span>
+                  }
+                  @if (line.hasError("discountTooHigh")) {
+                    <span>Discount cannot exceed quantity x rate. </span>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ================= TOTALS ================= -->
+    <div class="totals">
+      <div><span>Sub Total</span><b>{{ totals().subTotal | number: "1.2-2" }}</b></div>
+      <div><span>Tax</span><b>{{ totals().taxAmount | number: "1.2-2" }}</b></div>
+      <div class="grand">
+        <span>Total</span><b>{{ totals().totalAmount | number: "1.2-2" }}</b>
+      </div>
+      <small>The server recalculates the totals when you save.</small>
+    </div>
+
+    <!-- ================= BUTTONS ================= -->
+    <div class="buttons">
+      @if (!isReadOnly()) {
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="isSaving()"
+        >
+          {{ isEdit() ? "Update" : "Save" }}
+        </button>
+      }
+
+      @if (isEdit() && !isReadOnly()) {
+        <button
+          mat-stroked-button
+          color="primary"
+          type="button"
+          [disabled]="form.dirty"
+          [matTooltip]="form.dirty ? 'Save your changes first' : ''"
+          (click)="post()"
+        >
+          <mat-icon>check_circle</mat-icon>
+          Post
+        </button>
+      }
+
+      @if (canCancelInvoice()) {
+        <button
+          mat-stroked-button
+          color="warn"
+          type="button"
+          (click)="cancelInvoice()"
+        >
+          <mat-icon>block</mat-icon>
+          Cancel Invoice
+        </button>
+      }
+
+      <button mat-button type="button" (click)="goBack()">
+        {{ isReadOnly() ? "Back" : "Close" }}
+      </button>
+    </div>
+  </form>
+</div>

@@ -5,9 +5,10 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { ApiResponse } from '../models/api-response';
 import { Vendor } from '../models/vendor';
+import { Customer } from '../models/customer';
 import { Itemmaster } from '../models/itemmaster';
 
-/** Dropdown data needed by the transaction screens (vendors, items). */
+/** Dropdown data needed by the transaction screens (vendors, customers, items). */
 @Injectable({ providedIn: 'root' })
 export class LookupService {
   private readonly http = inject(HttpClient);
@@ -15,6 +16,12 @@ export class LookupService {
   getVendors(): Observable<ApiResponse<Vendor[]>> {
     return this.http.get<ApiResponse<Vendor[]>>(
       `${environment.apiUrl}/v1/Vendor/GetAll`,
+    );
+  }
+
+  getCustomers(): Observable<ApiResponse<Customer[]>> {
+    return this.http.get<ApiResponse<Customer[]>>(
+      `${environment.apiUrl}/v1/Customer/GetAll`,
     );
   }
 

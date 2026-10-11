@@ -1,0 +1,280 @@
+<div class="page">
+  <div class="page-header">
+    <h2>{{ title() }}</h2>
+
+    @if (isEdit()) {
+      <span class="status-badge" [class]="statusClass()">{{ status() }}</span>
+    }
+  </div>
+
+  @if (isReadOnly()) {
+    <div class="banner">
+      This receipt is <b>{{ status() }}</b>, so it is read only. Only
+      <b>Draft</b> receipts can be edited.
+    </div>
+  }
+
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <!-- ================= HEADER ================= -->
+    <div class="header-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Receipt Number</mat-label>
+        <input matInput formControlName="receiptNumber" appSelectOnFocus />
+        @if (!isEdit()) {
+          <mat-hint>Leave blank to auto-generate (GRN-000001)</mat-hint>
+        }
+        @if (form.controls.receiptNumber.hasError("maxlength")) {
+          <mat-error>Maximum 30 characters allowed</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Receipt Date</mat-label>
+        <input
+          matInput
+          [matDatepicker]="receiptDatePicker"
+          formControlName="receiptDate"
+        />
+        <mat-datepicker-toggle
+          matIconSuffix
+          [for]="receiptDatePicker"
+        ></mat-datepicker-toggle>
+        <mat-datepicker #receiptDatePicker></mat-datepicker>
+
+        @if (form.controls.receiptDate.hasError("required")) {
+          <mat-error>Receipt date is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Purchase Order</mat-label>
+        <mat-select
+          formControlName="purchaseOrderId"
+          (selectionChange)="onPoChange($event.value)"
+        >
+          @for (po of poOptions(); track po.id) {
+            <mat-option [value]="po.id">
+              {{ po.poNumber }} ({{ po.status }})
+            </mat-option>
+          }
+        </mat-select>
+        @if (!isEdit()) {
+          <mat-hint>Only Approved / Partially Received POs</mat-hint>
+        }
+        @if (form.controls.purchaseOrderId.hasError("required")) {
+          <mat-error>Select a purchase order</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Vendor</mat-label>
+        <input matInput [value]="vendorName()" readonly />
+        <mat-hint>Taken from the purchase order</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="notes">
+        <mat-label>Notes</mat-label>
+        <textarea matInput formControlName="notes" rows="2"></textarea>
+        @if (form.controls.notes.hasError("maxlength")) {
+          <mat-error>Maximum 500 characters allowed</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <!-- ================= LINES ================= -->
+    <h3>Items received</h3>
+
+    @if (isReadOnly()) {
+      <!-- Posted / cancelled: show what the server saved -->
+      <div class="table-wrap">
+        <table class="lines">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th class="item-col">Item</th>
+              <th class="num">Received</th>
+              <th class="num">Rate</th>
+              <th class="num">Discount</th>
+              <th class="num">Tax %</th>
+              <th class="num">Tax Amount</th>
+              <th class="num">Line Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of savedDetails(); track d.id; let i = $index) {
+              <tr>
+                <td>{{ i + 1 }}</td>
+                <td class="item-col">{{ itemName(d.itemmasterId) }}</td>
+                <td class="num">{{ d.receivedQuantity | number: "1.0-2" }}</td>
+                <td class="num">{{ d.rate | number: "1.2-2" }}</td>
+                <td class="num">{{ d.discountAmount | number: "1.2-2" }}</td>
+                <td class="num">{{ d.taxPercent | number: "1.0-2" }}</td>
+                <td class="num">{{ d.taxAmount | number: "1.2-2" }}</td>
+                <td class="num strong">{{ d.lineTotal | number: "1.2-2" }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      @if (lines.length === 0) {
+        <div class="hint-box">
+          Select a purchase order to load the items still to be received.
+        </div>
+      }
+
+      @if (lines.hasError("noQuantity") && lines.length > 0 && form.touched) {
+        <div class="error-line">Enter a quantity for at least one item.</div>
+      }
+
+      @if (lines.length > 0) {
+        <div class="table-wrap">
+          <table class="lines" formArrayName="details">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th class="item-col">Item</th>
+                <th class="num">Ordered</th>
+                <th class="num">Received so far</th>
+                <th class="num">Outstanding</th>
+                <th>Receive now</th>
+                <th class="num">Rate</th>
+                <th class="num">Tax %</th>
+                <th class="num">Tax Amount</th>
+                <th class="num">Line Total</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (line of lines.controls; track line; let i = $index) {
+                <tr [formGroupName]="i">
+                  <td>{{ i + 1 }}</td>
+                  <td class="item-col">
+                    {{ itemName(line.controls.itemmasterId.value) }}
+                  </td>
+                  <td class="num">
+                    {{ line.controls.orderedQuantity.value | number: "1.0-2" }}
+                  </td>
+                  <td class="num">
+                    {{ line.controls.alreadyReceived.value | number: "1.0-2" }}
+                  </td>
+                  <td class="num strong">
+                    {{ line.controls.outstanding.value | number: "1.0-2" }}
+                  </td>
+
+                  <td class="qty">
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                      <input
+                        matInput
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        formControlName="receivedQuantity"
+                        appSelectOnFocus
+                      />
+                      <button
+                        matSuffix
+                        mat-icon-button
+                        type="button"
+                        matTooltip="Receive everything outstanding"
+                        (click)="receiveAll(line)"
+                      >
+                        <mat-icon>done_all</mat-icon>
+                      </button>
+                    </mat-form-field>
+                  </td>
+
+                  <td class="num">{{ line.controls.rate.value | number: "1.2-2" }}</td>
+                  <td class="num">
+                    {{ line.controls.taxPercent.value | number: "1.0-2" }}
+                  </td>
+                  <td class="num">
+                    {{ lineAmounts()[i]?.taxAmount | number: "1.2-2" }}
+                  </td>
+                  <td class="num strong">
+                    {{ lineAmounts()[i]?.lineTotal | number: "1.2-2" }}
+                  </td>
+                </tr>
+
+                @if (line.touched && line.invalid) {
+                  <tr class="error-row">
+                    <td></td>
+                    <td colspan="9">
+                      @if (line.hasError("exceedsOutstanding")) {
+                        <span>
+                          You can receive at most
+                          {{ line.controls.outstanding.value }} of this item.
+                        </span>
+                      }
+                      @if (line.controls.receivedQuantity.invalid) {
+                        <span>Quantity cannot be negative. </span>
+                      }
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+    <!-- ================= TOTALS ================= -->
+    <div class="totals">
+      <div><span>Sub Total</span><b>{{ totals().subTotal | number: "1.2-2" }}</b></div>
+      <div><span>Tax</span><b>{{ totals().taxAmount | number: "1.2-2" }}</b></div>
+      <div class="grand">
+        <span>Total</span><b>{{ totals().totalAmount | number: "1.2-2" }}</b>
+      </div>
+      <small>Rate, discount and tax come from the purchase order. The server recalculates when you save.</small>
+    </div>
+
+    <!-- ================= BUTTONS ================= -->
+    <div class="buttons">
+      @if (!isReadOnly()) {
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="isSaving()"
+        >
+          {{ isEdit() ? "Update" : "Save" }}
+        </button>
+      }
+
+      @if (isEdit() && !isReadOnly()) {
+        <button
+          mat-stroked-button
+          color="primary"
+          type="button"
+          [disabled]="form.dirty"
+          [matTooltip]="form.dirty ? 'Save your changes first' : ''"
+          (click)="post()"
+        >
+          <mat-icon>check_circle</mat-icon>
+          Post
+        </button>
+      }
+
+      @if (canCancelReceipt()) {
+        <button
+          mat-stroked-button
+          color="warn"
+          type="button"
+          (click)="cancelReceipt()"
+        >
+          <mat-icon>block</mat-icon>
+          Cancel Receipt
+        </button>
+      }
+
+      <button mat-button type="button" (click)="goBack()">
+        {{ isReadOnly() ? "Back" : "Close" }}
+      </button>
+    </div>
+  </form>
+</div>

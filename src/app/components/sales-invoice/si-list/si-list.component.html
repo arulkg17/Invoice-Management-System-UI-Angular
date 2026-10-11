@@ -1,0 +1,173 @@
+<div class="page">
+  <div class="page-header">
+    <h2>Sales Invoices</h2>
+
+    <button mat-flat-button color="primary" type="button" (click)="add()">
+      <mat-icon>add</mat-icon>
+      New Sales Invoice
+    </button>
+  </div>
+
+  <!-- SEARCH -->
+  <form [formGroup]="filterForm" class="filters">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Invoice Number</mat-label>
+      <input matInput formControlName="invoiceNumber" placeholder="Search..." />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Customer</mat-label>
+      <mat-select formControlName="customerId">
+        <mat-option [value]="null">All customers</mat-option>
+        @for (customer of customers(); track customer.id) {
+          <mat-option [value]="customer.id">
+            {{ customer.customerCode }} - {{ customer.customerName }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Status</mat-label>
+      <mat-select formControlName="status">
+        <mat-option value="">All statuses</mat-option>
+        @for (status of statuses; track status) {
+          <mat-option [value]="status">{{ status }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <button mat-stroked-button type="button" (click)="clearFilters()">
+      Clear
+    </button>
+  </form>
+
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  <!-- TABLE -->
+  <table mat-table [dataSource]="invoices()" class="mat-elevation-z4">
+    <ng-container matColumnDef="invoiceNumber">
+      <th mat-header-cell *matHeaderCellDef>Invoice No</th>
+      <td mat-cell *matCellDef="let i">
+        <a class="link" (click)="open(i)">{{ i.invoiceNumber }}</a>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="invoiceDate">
+      <th mat-header-cell *matHeaderCellDef>Date</th>
+      <td mat-cell *matCellDef="let i">
+        {{ i.invoiceDate | date: "dd-MMM-yyyy" }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="dueDate">
+      <th mat-header-cell *matHeaderCellDef>Due Date</th>
+      <td mat-cell *matCellDef="let i">
+        {{ i.dueDate ? (i.dueDate | date: "dd-MMM-yyyy") : "-" }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="customer">
+      <th mat-header-cell *matHeaderCellDef>Customer</th>
+      <td mat-cell *matCellDef="let i">{{ customerName(i.customerId) }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>Status</th>
+      <td mat-cell *matCellDef="let i">
+        <span class="status-badge" [class]="statusClass(i.status)">
+          {{ i.status }}
+        </span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="subTotal">
+      <th mat-header-cell *matHeaderCellDef class="num">Sub Total</th>
+      <td mat-cell *matCellDef="let i" class="num">
+        {{ i.subTotal | number: "1.2-2" }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="taxAmount">
+      <th mat-header-cell *matHeaderCellDef class="num">Tax</th>
+      <td mat-cell *matCellDef="let i" class="num">
+        {{ i.taxAmount | number: "1.2-2" }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="totalAmount">
+      <th mat-header-cell *matHeaderCellDef class="num">Total</th>
+      <td mat-cell *matCellDef="let i" class="num total">
+        {{ i.totalAmount | number: "1.2-2" }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef class="actions">Actions</th>
+      <td mat-cell *matCellDef="let i" class="actions">
+        <button
+          mat-icon-button
+          type="button"
+          [matTooltip]="canEdit(i) ? 'Edit' : 'View'"
+          (click)="open(i)"
+        >
+          <mat-icon>{{ canEdit(i) ? "edit" : "visibility" }}</mat-icon>
+        </button>
+
+        @if (canPost(i)) {
+          <button
+            mat-icon-button
+            type="button"
+            color="primary"
+            matTooltip="Post"
+            (click)="post(i)"
+          >
+            <mat-icon>check_circle</mat-icon>
+          </button>
+        }
+
+        @if (canCancel(i)) {
+          <button
+            mat-icon-button
+            type="button"
+            matTooltip="Cancel"
+            (click)="cancel(i)"
+          >
+            <mat-icon>block</mat-icon>
+          </button>
+        }
+
+        @if (canDelete(i)) {
+          <button
+            mat-icon-button
+            type="button"
+            color="warn"
+            matTooltip="Delete"
+            (click)="remove(i)"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        }
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+  </table>
+
+  @if (!isLoading() && invoices().length === 0) {
+    <div class="empty">No sales invoices found.</div>
+  }
+
+  <mat-paginator
+    [length]="totalRecords()"
+    [pageSize]="pageSize()"
+    [pageIndex]="pageIndex()"
+    [pageSizeOptions]="[5, 10, 25, 50]"
+    showFirstLastButtons
+    (page)="onPage($event)"
+  ></mat-paginator>
+</div>

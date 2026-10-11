@@ -1,0 +1,41 @@
+.page {
+  margin: 20px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.page-header h2 {
+  margin: 0;
+}
+
+.search {
+  min-width: 320px;
+  margin-bottom: 16px;
+}
+
+table {
+  width: 100%;
+}
+
+.num {
+  text-align: right;
+}
+
+.on-hand {
+  font-weight: 700;
+}
+
+.zero {
+  color: #c62828;
+}
+
+.empty {
+  padding: 24px;
+  text-align: center;
+  color: #777;
+}
