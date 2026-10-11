@@ -1,0 +1,308 @@
+<div class="page">
+  <div class="page-header">
+    <h2>{{ title() }}</h2>
+
+    @if (isEdit()) {
+      <span class="status-badge" [class]="statusClass()">{{ status() }}</span>
+    }
+  </div>
+
+  @if (isReadOnly()) {
+    <div class="banner">
+      This purchase order is <b>{{ status() }}</b>, so it is read only. Only
+      <b>Draft</b> purchase orders can be edited.
+    </div>
+  }
+
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <!-- ================= HEADER ================= -->
+    <div class="header-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>PO Number</mat-label>
+        <input matInput formControlName="poNumber" appSelectOnFocus />
+
+        @if (!isReadOnly() && !isEdit()) {
+          <button
+            matSuffix
+            mat-icon-button
+            type="button"
+            matTooltip="Generate a PO number"
+            (click)="generatePoNumber()"
+          >
+            <mat-icon>autorenew</mat-icon>
+          </button>
+        }
+
+        @if (form.controls.poNumber.hasError("required")) {
+          <mat-error>PO number is required</mat-error>
+        } @else if (form.controls.poNumber.hasError("maxlength")) {
+          <mat-error>Maximum 30 characters allowed</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>PO Date</mat-label>
+        <input matInput [matDatepicker]="poDatePicker" formControlName="poDate" />
+        <mat-datepicker-toggle
+          matIconSuffix
+          [for]="poDatePicker"
+        ></mat-datepicker-toggle>
+        <mat-datepicker #poDatePicker></mat-datepicker>
+
+        @if (form.controls.poDate.hasError("required")) {
+          <mat-error>PO date is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Vendor</mat-label>
+        <mat-select formControlName="vendorId">
+          @for (vendor of vendors(); track vendor.id) {
+            <mat-option [value]="vendor.id">
+              {{ vendor.vendorCode }} - {{ vendor.vendorName }}
+              @if (vendor.isActive === false) {
+                (Inactive)
+              }
+            </mat-option>
+          }
+        </mat-select>
+
+        @if (form.controls.vendorId.hasError("required")) {
+          <mat-error>Vendor is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="notes">
+        <mat-label>Notes</mat-label>
+        <textarea matInput formControlName="notes" rows="2"></textarea>
+
+        @if (form.controls.notes.hasError("maxlength")) {
+          <mat-error>Maximum 500 characters allowed</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <!-- ================= LINES ================= -->
+    <div class="lines-header">
+      <h3>Items</h3>
+
+      @if (!isReadOnly()) {
+        <button mat-stroked-button type="button" (click)="addLine()">
+          <mat-icon>add</mat-icon>
+          Add Item
+        </button>
+      }
+    </div>
+
+    @if (lines.hasError("noLines") && form.touched) {
+      <div class="error-line">Add at least one item.</div>
+    }
+
+    <div class="table-wrap">
+      <table class="lines" formArrayName="details">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th class="item-col">Item</th>
+            <th>Quantity</th>
+            <th>Rate</th>
+            <th>Discount</th>
+            <th>Tax %</th>
+            <th class="num">Tax Amount</th>
+            <th class="num">Line Total</th>
+            @if (isEdit() && status() !== "Draft") {
+              <th class="num">Received</th>
+            }
+            @if (!isReadOnly()) {
+              <th></th>
+            }
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (line of lines.controls; track line; let i = $index) {
+            <tr [formGroupName]="i">
+              <td>{{ i + 1 }}</td>
+
+              <td class="item-col">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-select
+                    formControlName="itemmasterId"
+                    placeholder="Select item"
+                    (selectionChange)="onItemChange(line)"
+                  >
+                    @for (item of items(); track item.id) {
+                      <mat-option [value]="item.id">
+                        {{ itemLabel(item) }}
+                      </mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </td>
+
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <input
+                    matInput
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    formControlName="quantity"
+                    appSelectOnFocus
+                  />
+                </mat-form-field>
+              </td>
+
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <input
+                    matInput
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    formControlName="rate"
+                    appSelectOnFocus
+                  />
+                </mat-form-field>
+              </td>
+
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <input
+                    matInput
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    formControlName="discountAmount"
+                    appSelectOnFocus
+                  />
+                </mat-form-field>
+              </td>
+
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <input
+                    matInput
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    formControlName="taxPercent"
+                    appSelectOnFocus
+                  />
+                </mat-form-field>
+              </td>
+
+              <td class="num">
+                {{ lineAmounts()[i]?.taxAmount | number: "1.2-2" }}
+              </td>
+
+              <td class="num strong">
+                {{ lineAmounts()[i]?.lineTotal | number: "1.2-2" }}
+              </td>
+
+              @if (isEdit() && status() !== "Draft") {
+                <td class="num">
+                  {{ line.controls.receivedQuantity.value | number: "1.0-2" }}
+                </td>
+              }
+
+              @if (!isReadOnly()) {
+                <td>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    color="warn"
+                    matTooltip="Remove item"
+                    (click)="removeLine(i)"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              }
+            </tr>
+
+            @if (line.touched && line.invalid) {
+              <tr class="error-row">
+                <td></td>
+                <td [attr.colspan]="isReadOnly() ? 8 : 9">
+                  @if (line.controls.itemmasterId.hasError("required")) {
+                    <span>Select an item. </span>
+                  }
+                  @if (line.controls.quantity.invalid) {
+                    <span>Quantity must be greater than 0. </span>
+                  }
+                  @if (line.controls.rate.invalid) {
+                    <span>Rate cannot be negative. </span>
+                  }
+                  @if (line.controls.discountAmount.invalid) {
+                    <span>Discount cannot be negative. </span>
+                  }
+                  @if (line.controls.taxPercent.invalid) {
+                    <span>Tax % must be between 0 and 100. </span>
+                  }
+                  @if (line.hasError("discountTooHigh")) {
+                    <span>Discount cannot exceed quantity x rate. </span>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ================= TOTALS ================= -->
+    <div class="totals">
+      <div><span>Sub Total</span><b>{{ totals().subTotal | number: "1.2-2" }}</b></div>
+      <div><span>Tax</span><b>{{ totals().taxAmount | number: "1.2-2" }}</b></div>
+      <div class="grand">
+        <span>Total</span><b>{{ totals().totalAmount | number: "1.2-2" }}</b>
+      </div>
+      <small>The server recalculates the totals when you save.</small>
+    </div>
+
+    <!-- ================= BUTTONS ================= -->
+    <div class="buttons">
+      @if (!isReadOnly()) {
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="isSaving()"
+        >
+          {{ isEdit() ? "Update" : "Save" }}
+        </button>
+      }
+
+      @if (isEdit() && !isReadOnly()) {
+        <button
+          mat-stroked-button
+          color="primary"
+          type="button"
+          [disabled]="form.dirty"
+          [matTooltip]="form.dirty ? 'Save your changes first' : ''"
+          (click)="approve()"
+        >
+          <mat-icon>check_circle</mat-icon>
+          Approve
+        </button>
+      }
+
+      @if (canCancelOrder()) {
+        <button mat-stroked-button color="warn" type="button" (click)="cancelOrder()">
+          <mat-icon>block</mat-icon>
+          Cancel PO
+        </button>
+      }
+
+      <button mat-button type="button" (click)="goBack()">
+        {{ isReadOnly() ? "Back" : "Close" }}
+      </button>
+    </div>
+  </form>
+</div>
