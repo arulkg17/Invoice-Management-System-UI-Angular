@@ -38,4 +38,15 @@ export class CategoryService {
   getById(id: number): Observable<ApiResponse<Category>> {
     return this.http.get<ApiResponse<Category>>(`${this.apiUrl}/GetById/${id}`);
   }
+
+  create(category: Category): Observable<ApiResponse<Category>> {
+    return this.http.post<ApiResponse<Category>>(
+      `${this.apiUrl}/create`,
+      category,
+    );
+  }
+
+  update(id: number, category: Category): Observable<boolean> {
+    return this.http.put<boolean>(`${this.apiUrl}/update/${id}`, category);
+  }
 }

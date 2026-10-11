@@ -25,6 +25,7 @@ export class HomeComponent {
     };
     this.service.login(param).subscribe({
       next: (response) => {
+        console.log("Login response=",response);
         this.service.setSession(response.data.token, response.data.expiration);
         this.isLoginSuccess = true;
         this.message = 'Login Successfull';
