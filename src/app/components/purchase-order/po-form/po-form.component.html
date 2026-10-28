@@ -9,8 +9,8 @@
 
   @if (isReadOnly()) {
     <div class="banner">
-      This purchase order is <b>{{ status() }}</b>, so it is read only. Only
-      <b>Draft</b> purchase orders can be edited.
+      This purchase order is <b>{{ status() }}</b
+      >, so it is read only. Only <b>Draft</b> purchase orders can be edited.
     </div>
   }
 
@@ -46,7 +46,11 @@
 
       <mat-form-field appearance="outline">
         <mat-label>PO Date</mat-label>
-        <input matInput [matDatepicker]="poDatePicker" formControlName="poDate" />
+        <input
+          matInput
+          [matDatepicker]="poDatePicker"
+          formControlName="poDate"
+        />
         <mat-datepicker-toggle
           matIconSuffix
           [for]="poDatePicker"
@@ -258,8 +262,12 @@
 
     <!-- ================= TOTALS ================= -->
     <div class="totals">
-      <div><span>Sub Total</span><b>{{ totals().subTotal | number: "1.2-2" }}</b></div>
-      <div><span>Tax</span><b>{{ totals().taxAmount | number: "1.2-2" }}</b></div>
+      <div>
+        <span>Sub Total</span><b>{{ totals().subTotal | number: "1.2-2" }}</b>
+      </div>
+      <div>
+        <span>Tax</span><b>{{ totals().taxAmount | number: "1.2-2" }}</b>
+      </div>
       <div class="grand">
         <span>Total</span><b>{{ totals().totalAmount | number: "1.2-2" }}</b>
       </div>
@@ -279,6 +287,14 @@
         </button>
       }
 
+      <!-- NEW: any saved PO (any status) -->
+      @if (isEdit()) {
+        <button mat-stroked-button type="button" (click)="viewPdf()">
+          <mat-icon>picture_as_pdf</mat-icon>
+          View PDF
+        </button>
+      }
+
       @if (isEdit() && !isReadOnly()) {
         <button
           mat-stroked-button
@@ -286,15 +302,20 @@
           type="button"
           [disabled]="form.dirty"
           [matTooltip]="form.dirty ? 'Save your changes first' : ''"
-          (click)="approve()"
+          (click)="verifyAndApprove()"
         >
-          <mat-icon>check_circle</mat-icon>
-          Approve
+          <mat-icon>fact_check</mat-icon>
+          Verify & Approve
         </button>
       }
 
       @if (canCancelOrder()) {
-        <button mat-stroked-button color="warn" type="button" (click)="cancelOrder()">
+        <button
+          mat-stroked-button
+          color="warn"
+          type="button"
+          (click)="cancelOrder()"
+        >
           <mat-icon>block</mat-icon>
           Cancel PO
         </button>
