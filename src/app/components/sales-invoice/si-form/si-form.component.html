@@ -9,8 +9,8 @@
 
   @if (isReadOnly()) {
     <div class="banner">
-      This sales invoice is <b>{{ status() }}</b>, so it is read only. Only
-      <b>Draft</b> invoices can be edited.
+      This sales invoice is <b>{{ status() }}</b
+      >, so it is read only. Only <b>Draft</b> invoices can be edited.
     </div>
   }
 
@@ -75,7 +75,11 @@
 
       <mat-form-field appearance="outline">
         <mat-label>Due Date (optional)</mat-label>
-        <input matInput [matDatepicker]="dueDatePicker" formControlName="dueDate" />
+        <input
+          matInput
+          [matDatepicker]="dueDatePicker"
+          formControlName="dueDate"
+        />
         @if (form.controls.dueDate.value && !isReadOnly()) {
           <button
             matSuffix
@@ -93,7 +97,9 @@
         ></mat-datepicker-toggle>
         <mat-datepicker #dueDatePicker></mat-datepicker>
         @if (form.hasError("dueBeforeInvoice")) {
-          <mat-error>Due date cannot be earlier than the invoice date</mat-error>
+          <mat-error
+            >Due date cannot be earlier than the invoice date</mat-error
+          >
         }
       </mat-form-field>
 
@@ -170,7 +176,9 @@
                   [class.short]="isShort(line.controls.itemmasterId.value)"
                 >
                   @if (line.controls.itemmasterId.value) {
-                    {{ onHand(line.controls.itemmasterId.value) | number: "1.0-2" }}
+                    {{
+                      onHand(line.controls.itemmasterId.value) | number: "1.0-2"
+                    }}
                   } @else {
                     -
                   }
@@ -285,8 +293,12 @@
 
     <!-- ================= TOTALS ================= -->
     <div class="totals">
-      <div><span>Sub Total</span><b>{{ totals().subTotal | number: "1.2-2" }}</b></div>
-      <div><span>Tax</span><b>{{ totals().taxAmount | number: "1.2-2" }}</b></div>
+      <div>
+        <span>Sub Total</span><b>{{ totals().subTotal | number: "1.2-2" }}</b>
+      </div>
+      <div>
+        <span>Tax</span><b>{{ totals().taxAmount | number: "1.2-2" }}</b>
+      </div>
       <div class="grand">
         <span>Total</span><b>{{ totals().totalAmount | number: "1.2-2" }}</b>
       </div>
@@ -305,7 +317,12 @@
           {{ isEdit() ? "Update" : "Save" }}
         </button>
       }
-
+      @if (isEdit()) {
+        <button mat-stroked-button type="button" (click)="viewPdf()">
+          <mat-icon>picture_as_pdf</mat-icon>
+          View PDF
+        </button>
+      }
       @if (isEdit() && !isReadOnly()) {
         <button
           mat-stroked-button

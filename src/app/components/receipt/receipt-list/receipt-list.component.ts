@@ -37,6 +37,7 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/confirm-dialog/confirm-dialog.component';
+import { PdfViewerService } from '../../../shared/pdf-viewer.service';
 
 @Component({
   selector: 'app-receipt-list',
@@ -68,6 +69,7 @@ export class ReceiptListComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly pdfViewer = inject(PdfViewerService);
 
   readonly displayedColumns = [
     'receiptNumber',
@@ -130,7 +132,9 @@ export class ReceiptListComponent implements OnInit {
       this.vendors.set(vendors.data ?? []);
       this.purchaseOrders.set(orders.data ?? []);
     } catch (error) {
-      this.notify(getApiMessage(error, 'Unable to load vendors / purchase orders'));
+      this.notify(
+        getApiMessage(error, 'Unable to load vendors / purchase orders'),
+      );
     }
   }
 
@@ -280,6 +284,12 @@ export class ReceiptListComponent implements OnInit {
       // e.g. "Cannot cancel: stock of item A01 has already been sold ..."
       this.notify(getApiMessage(error, 'The operation failed'));
     }
+  }
+  // ---------------- PDF ----------------
+  viewPdf(r: Receipt): void {
+    this.pdfViewer
+      .preview('Receipt', r.id, `Goods Receipt ${r.receiptNumber}`)
+      .subscribe();
   }
 
   private notify(message: string): void {
