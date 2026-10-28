@@ -38,6 +38,7 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/confirm-dialog/confirm-dialog.component';
+import { PdfViewerService } from '../../../shared/pdf-viewer.service';
 
 @Component({
   selector: 'app-po-list',
@@ -68,6 +69,8 @@ export class PoListComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+
+  private pdfViewer = inject(PdfViewerService);
 
   readonly displayedColumns = [
     'poNumber',
@@ -266,5 +269,34 @@ export class PoListComponent implements OnInit {
 
   private notify(message: string): void {
     this.snackBar.open(message, 'Close', { duration: 4000 });
+  }
+
+  // Just view (any status)
+  viewPdf(po: PurchaseOrder) {
+    this.pdfViewer
+      .preview('PurchaseOrder', po.id, `Purchase Order ${po.poNumber}`)
+      .subscribe();
+  }
+
+  // Verify, then approve from inside the preview
+  verifyAndApprove(po: PurchaseOrder): void {
+    this.pdfViewer
+      .preview('PurchaseOrder', po.id, `Verify ${po.poNumber}`, 'Approve')
+      .subscribe((result) => {
+        if (result === 'approve') void this.approveNow(po); // was this.approve(po)
+      });
+  }
+
+  /** No confirm dialog: the user already confirmed by clicking Approve in the PDF preview. */
+  private async approveNow(po: PurchaseOrder): Promise<void> {
+    try {
+      const response = await firstValueFrom(this.service.approve(po.id));
+      this.notify(
+        response.success ? `${po.poNumber} approved` : response.message,
+      );
+      await this.load();
+    } catch (error) {
+      this.notify(getApiMessage(error, 'The operation failed'));
+    }
   }
 }

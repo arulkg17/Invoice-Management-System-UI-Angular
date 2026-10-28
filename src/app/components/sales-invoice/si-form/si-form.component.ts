@@ -39,13 +39,16 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/confirm-dialog/confirm-dialog.component';
+import { PdfViewerService } from '../../../shared/pdf-viewer.service';
 
 // ---------------------------------------------------------------------------
 // Validators
 // ---------------------------------------------------------------------------
 
 /** A line's discount cannot be more than quantity x rate. */
-function discountNotAboveAmount(group: AbstractControl): ValidationErrors | null {
+function discountNotAboveAmount(
+  group: AbstractControl,
+): ValidationErrors | null {
   const quantity = Number(group.get('quantity')?.value ?? 0);
   const rate = Number(group.get('rate')?.value ?? 0);
   const discount = Number(group.get('discountAmount')?.value ?? 0);
@@ -137,12 +140,16 @@ export class SiFormComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly pdfViewer = inject(PdfViewerService);
 
   // ---------------- FORM ----------------
   readonly form = this.fb.group(
     {
       invoiceNumber: this.fb.control('', Validators.maxLength(30)),
-      invoiceDate: this.fb.control<Date | null>(new Date(), Validators.required),
+      invoiceDate: this.fb.control<Date | null>(
+        new Date(),
+        Validators.required,
+      ),
       dueDate: this.fb.control<Date | null>(null),
       customerId: this.fb.control<number | null>(null, Validators.required),
       notes: this.fb.control('', Validators.maxLength(500)),
@@ -258,7 +265,9 @@ export class SiFormComponent implements OnInit {
     const response = await firstValueFrom(this.stockService.getAll());
 
     this.stock.set(
-      new Map((response.data ?? []).map((s) => [s.itemmasterId, s.onHandQuantity])),
+      new Map(
+        (response.data ?? []).map((s) => [s.itemmasterId, s.onHandQuantity]),
+      ),
     );
   }
 
@@ -386,7 +395,11 @@ export class SiFormComponent implements OnInit {
           : 'Sales invoice created successfully',
       );
 
+      // NEW: show the saved invoice as a PDF before leaving the screen
+      const savedId = this.isEdit() ? this.invoiceId() : Number(response.data);
       this.form.markAsPristine();
+      await this.showSavedCopy(savedId);
+
       await this.router.navigate(['/transactions/sales-invoice']);
     } catch (error) {
       this.notify(getApiMessage(error, 'Unable to save the sales invoice'));
@@ -409,7 +422,17 @@ export class SiFormComponent implements OnInit {
       'Sales invoice posted',
     );
   }
+  viewPdf(): void {
+    this.pdfViewer
+      .preview('SalesInvoice', this.invoiceId(), 'Sales Invoice')
+      .subscribe();
+  }
 
+  private async showSavedCopy(id: number): Promise<void> {
+    await firstValueFrom(
+      this.pdfViewer.preview('SalesInvoice', id, 'Sales Invoice'),
+    );
+  }
   cancelInvoice(): Promise<void> {
     return this.confirmAndRun(
       {

@@ -40,6 +40,7 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/confirm-dialog/confirm-dialog.component';
+import { PdfViewerService } from '../../../shared/pdf-viewer.service';
 
 // ---------------------------------------------------------------------------
 // One receipt line = one purchase order line + the quantity received now
@@ -64,7 +65,8 @@ function notAboveOutstanding(group: AbstractControl): ValidationErrors | null {
 
 /** At least one line must have a quantity greater than zero. */
 function atLeastOneQuantity(control: AbstractControl): ValidationErrors | null {
-  const groups = (control as unknown as { controls: AbstractControl[] }).controls;
+  const groups = (control as unknown as { controls: AbstractControl[] })
+    .controls;
 
   return groups.some((g) => Number(g.get('receivedQuantity')?.value) > 0)
     ? null
@@ -82,7 +84,9 @@ function createLine(
       itemmasterId: fb.control(info.itemmasterId),
       orderedQuantity: fb.control(info.orderedQuantity),
       alreadyReceived: fb.control(info.alreadyReceived),
-      outstanding: fb.control(round2(info.orderedQuantity - info.alreadyReceived)),
+      outstanding: fb.control(
+        round2(info.orderedQuantity - info.alreadyReceived),
+      ),
       rate: fb.control(info.rate),
       poDiscount: fb.control(info.poDiscount),
       taxPercent: fb.control(info.taxPercent),
@@ -126,7 +130,7 @@ export class ReceiptFormComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
-
+  private readonly pdfViewer = inject(PdfViewerService);
   // ---------------- FORM ----------------
   readonly form = this.fb.group({
     receiptNumber: this.fb.control('', Validators.maxLength(30)),
@@ -192,7 +196,9 @@ export class ReceiptFormComponent implements OnInit {
 
     const vendor = this.vendors().find((v) => v.id === po.vendorId);
 
-    return vendor ? `${vendor.vendorCode} - ${vendor.vendorName}` : `#${po.vendorId}`;
+    return vendor
+      ? `${vendor.vendorCode} - ${vendor.vendorName}`
+      : `#${po.vendorId}`;
   });
 
   // The form is not a signal, so a counter tells the computed values to refresh
@@ -209,7 +215,9 @@ export class ReceiptFormComponent implements OnInit {
       const discount =
         d.orderedQuantity === 0
           ? 0
-          : round2((d.poDiscount * (d.receivedQuantity ?? 0)) / d.orderedQuantity);
+          : round2(
+              (d.poDiscount * (d.receivedQuantity ?? 0)) / d.orderedQuantity,
+            );
 
       return calcLine(d.receivedQuantity, d.rate, discount, d.taxPercent);
     });
@@ -413,7 +421,11 @@ export class ReceiptFormComponent implements OnInit {
           : 'Receipt created successfully',
       );
 
+      // NEW: show the saved receipt as a PDF before leaving the screen
+      const savedId = this.isEdit() ? this.receiptId() : Number(response.data);
       this.form.markAsPristine();
+      await this.showSavedCopy(savedId);
+
       await this.router.navigate(['/transactions/receipt']);
     } catch (error) {
       this.notify(getApiMessage(error, 'Unable to save the receipt'));
@@ -436,7 +448,18 @@ export class ReceiptFormComponent implements OnInit {
       'Receipt posted',
     );
   }
+  viewPdf(): void {
+    this.pdfViewer
+      .preview('Receipt', this.receiptId(), 'Goods Receipt')
+      .subscribe();
+  }
 
+  /** Shows the saved receipt; closing the dialog continues to the list. */
+  private async showSavedCopy(id: number): Promise<void> {
+    await firstValueFrom(
+      this.pdfViewer.preview('Receipt', id, 'Goods Receipt'),
+    );
+  }
   cancelReceipt(): Promise<void> {
     return this.confirmAndRun(
       {

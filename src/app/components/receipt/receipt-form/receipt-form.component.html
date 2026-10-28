@@ -9,8 +9,8 @@
 
   @if (isReadOnly()) {
     <div class="banner">
-      This receipt is <b>{{ status() }}</b>, so it is read only. Only
-      <b>Draft</b> receipts can be edited.
+      This receipt is <b>{{ status() }}</b
+      >, so it is read only. Only <b>Draft</b> receipts can be edited.
     </div>
   }
 
@@ -167,7 +167,10 @@
                   </td>
 
                   <td class="qty">
-                    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                    <mat-form-field
+                      appearance="outline"
+                      subscriptSizing="dynamic"
+                    >
                       <input
                         matInput
                         type="number"
@@ -188,7 +191,9 @@
                     </mat-form-field>
                   </td>
 
-                  <td class="num">{{ line.controls.rate.value | number: "1.2-2" }}</td>
+                  <td class="num">
+                    {{ line.controls.rate.value | number: "1.2-2" }}
+                  </td>
                   <td class="num">
                     {{ line.controls.taxPercent.value | number: "1.0-2" }}
                   </td>
@@ -225,12 +230,19 @@
 
     <!-- ================= TOTALS ================= -->
     <div class="totals">
-      <div><span>Sub Total</span><b>{{ totals().subTotal | number: "1.2-2" }}</b></div>
-      <div><span>Tax</span><b>{{ totals().taxAmount | number: "1.2-2" }}</b></div>
+      <div>
+        <span>Sub Total</span><b>{{ totals().subTotal | number: "1.2-2" }}</b>
+      </div>
+      <div>
+        <span>Tax</span><b>{{ totals().taxAmount | number: "1.2-2" }}</b>
+      </div>
       <div class="grand">
         <span>Total</span><b>{{ totals().totalAmount | number: "1.2-2" }}</b>
       </div>
-      <small>Rate, discount and tax come from the purchase order. The server recalculates when you save.</small>
+      <small
+        >Rate, discount and tax come from the purchase order. The server
+        recalculates when you save.</small
+      >
     </div>
 
     <!-- ================= BUTTONS ================= -->
@@ -245,7 +257,12 @@
           {{ isEdit() ? "Update" : "Save" }}
         </button>
       }
-
+      @if (isEdit()) {
+        <button mat-stroked-button type="button" (click)="viewPdf()">
+          <mat-icon>picture_as_pdf</mat-icon>
+          View PDF
+        </button>
+      }
       @if (isEdit() && !isReadOnly()) {
         <button
           mat-stroked-button

@@ -101,6 +101,16 @@
     <ng-container matColumnDef="actions">
       <th mat-header-cell *matHeaderCellDef class="actions">Actions</th>
       <td mat-cell *matCellDef="let po" class="actions">
+        <!-- NEW: view PDF at any status -->
+        <button
+          mat-icon-button
+          type="button"
+          matTooltip="View PDF"
+          (click)="viewPdf(po)"
+        >
+          <mat-icon>picture_as_pdf</mat-icon>
+        </button>
+
         <button
           mat-icon-button
           type="button"
@@ -111,14 +121,15 @@
         </button>
 
         @if (canApprove(po)) {
+          <!-- CHANGED: was (click)="approve(po)" -->
           <button
             mat-icon-button
             type="button"
             color="primary"
-            matTooltip="Approve"
-            (click)="approve(po)"
+            matTooltip="Verify PDF & Approve"
+            (click)="verifyAndApprove(po)"
           >
-            <mat-icon>check_circle</mat-icon>
+            <mat-icon>fact_check</mat-icon>
           </button>
         }
 

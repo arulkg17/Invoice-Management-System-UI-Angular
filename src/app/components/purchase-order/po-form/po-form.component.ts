@@ -1,10 +1,4 @@
-import {
-  Component,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -44,13 +38,16 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/confirm-dialog/confirm-dialog.component';
+import { PdfViewerService } from '../../../shared/pdf-viewer.service';
 
 // ---------------------------------------------------------------------------
 // Validators
 // ---------------------------------------------------------------------------
 
 /** A line's discount cannot be more than quantity x rate. */
-function discountNotAboveAmount(group: AbstractControl): ValidationErrors | null {
+function discountNotAboveAmount(
+  group: AbstractControl,
+): ValidationErrors | null {
   const quantity = Number(group.get('quantity')?.value ?? 0);
   const rate = Number(group.get('rate')?.value ?? 0);
   const discount = Number(group.get('discountAmount')?.value ?? 0);
@@ -129,6 +126,7 @@ export class PoFormComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly pdfViewer = inject(PdfViewerService);
 
   // ---------------- FORM ----------------
   readonly form = this.fb.group({
@@ -331,7 +329,11 @@ export class PoFormComponent implements OnInit {
           : 'Purchase order created successfully',
       );
 
+      // NEW: show the saved PO as a PDF so it can be verified and approved
+      const savedId = this.isEdit() ? this.poId() : Number(response.data);
       this.form.markAsPristine();
+      await this.verifyAfterSave(savedId, request.poNumber);
+
       await this.router.navigate(['/transactions/po']);
     } catch (error) {
       // e.g. "A record with the same unique value ... already exists." (duplicate PO number)
@@ -341,6 +343,29 @@ export class PoFormComponent implements OnInit {
     }
   }
 
+  /** Opens the saved PO as PDF; the user can approve it right away or just close it. */
+  private async verifyAfterSave(id: number, poNumber: string): Promise<void> {
+    const result = await firstValueFrom(
+      this.pdfViewer.preview(
+        'PurchaseOrder',
+        id,
+        `Verify ${poNumber}`,
+        'Approve',
+      ),
+    );
+
+    if (result === 'approve') {
+      try {
+        const response = await firstValueFrom(this.service.approve(id));
+        this.notify(
+          response.success ? `${poNumber} approved` : response.message,
+        );
+      } catch (error) {
+        this.notify(getApiMessage(error, 'The operation failed'));
+      }
+    }
+    // Closing the dialog simply leaves the PO as Draft
+  }
   // ---------------- WORKFLOW ----------------
   approve(): Promise<void> {
     return this.confirmAndRun(
@@ -354,6 +379,41 @@ export class PoFormComponent implements OnInit {
       () => firstValueFrom(this.service.approve(this.poId())),
       'Purchase order approved',
     );
+  }
+
+  viewPdf(): void {
+    this.pdfViewer
+      .preview(
+        'PurchaseOrder',
+        this.poId(),
+        `Purchase Order ${this.form.controls.poNumber.value}`,
+      )
+      .subscribe();
+  }
+
+  verifyAndApprove(): void {
+    this.pdfViewer
+      .preview(
+        'PurchaseOrder',
+        this.poId(),
+        `Verify ${this.form.controls.poNumber.value}`,
+        'Approve',
+      )
+      .subscribe((result) => {
+        if (result === 'approve') void this.approveNow();
+      });
+  }
+
+  private async approveNow(): Promise<void> {
+    try {
+      const response = await firstValueFrom(this.service.approve(this.poId()));
+      this.notify(
+        response.success ? 'Purchase order approved' : response.message,
+      );
+      await this.loadOrder(this.poId()); // screen becomes read-only
+    } catch (error) {
+      this.notify(getApiMessage(error, 'The operation failed'));
+    }
   }
 
   cancelOrder(): Promise<void> {

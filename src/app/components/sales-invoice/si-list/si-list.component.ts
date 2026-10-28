@@ -27,7 +27,10 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { SalesInvoiceService } from '../../../services/sales-invoice.service';
 import { LookupService } from '../../../services/lookup.service';
-import { SalesInvoice, SalesInvoiceFilter } from '../../../models/sales-invoice';
+import {
+  SalesInvoice,
+  SalesInvoiceFilter,
+} from '../../../models/sales-invoice';
 import { Customer } from '../../../models/customer';
 import { DOC_STATUSES } from '../../../models/document-status';
 import { getApiMessage } from '../../../shared/api-helpers';
@@ -35,6 +38,7 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/confirm-dialog/confirm-dialog.component';
+import { PdfViewerService } from '../../../shared/pdf-viewer.service';
 
 @Component({
   selector: 'app-si-list',
@@ -65,6 +69,7 @@ export class SiListComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly pdfViewer = inject(PdfViewerService);
 
   readonly displayedColumns = [
     'invoiceNumber',
@@ -257,7 +262,12 @@ export class SiListComponent implements OnInit {
       this.notify(getApiMessage(error, 'The operation failed'));
     }
   }
-
+  // ---------------- PDF ----------------
+  viewPdf(i: SalesInvoice): void {
+    this.pdfViewer
+      .preview('SalesInvoice', i.id, `Sales Invoice ${i.invoiceNumber}`)
+      .subscribe();
+  }
   private notify(message: string): void {
     this.snackBar.open(message, 'Close', { duration: 5000 });
   }

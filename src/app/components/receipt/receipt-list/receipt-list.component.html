@@ -119,6 +119,14 @@
         <button
           mat-icon-button
           type="button"
+          matTooltip="View PDF"
+          (click)="viewPdf(r)"
+        >
+          <mat-icon>picture_as_pdf</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          type="button"
           [matTooltip]="canEdit(r) ? 'Edit' : 'View'"
           (click)="open(r)"
         >
