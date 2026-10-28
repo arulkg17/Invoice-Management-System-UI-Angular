@@ -1,0 +1,82 @@
+<div class="page">
+  <div class="page-header">
+    <h2>AI Assistant</h2>
+
+    <mat-button-toggle-group
+      [value]="mode()"
+      (change)="setMode($event.value)"
+      aria-label="Question type"
+    >
+      <mat-button-toggle value="single">Single intent</mat-button-toggle>
+      <mat-button-toggle value="multi">Multiple intents</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  <p class="hint">
+    @if (mode() === "single") {
+      Ask one question about customers, vendors, users, items or categories.
+    } @else {
+      Ask several things in one question; each part is answered separately.
+    }
+    Press <strong>Ctrl + Enter</strong> to send.
+  </p>
+
+  <mat-form-field appearance="outline" class="question">
+    <mat-label>Your question</mat-label>
+    <textarea
+      matInput
+      rows="3"
+      [value]="question()"
+      (input)="question.set($any($event.target).value)"
+      (keydown.control.enter)="send()"
+      [disabled]="isBusy()"
+    ></textarea>
+  </mat-form-field>
+
+  <div class="actions">
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      [disabled]="isBusy() || !question().trim()"
+      (click)="send()"
+    >
+      <mat-icon>send</mat-icon>
+      Ask
+    </button>
+
+    @for (sample of samples[mode()]; track sample) {
+      <button mat-stroked-button type="button" class="chip" (click)="useSample(sample)">
+        {{ sample }}
+      </button>
+    }
+  </div>
+
+  @if (isBusy()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p class="hint">
+      Thinking... {{ elapsed() }} s (the local Ollama model can take 10 to 20 seconds)
+    </p>
+  }
+
+  @if (history().length > 0) {
+    <div class="history-header">
+      <h3>Answers</h3>
+      <button mat-button type="button" (click)="clearHistory()">Clear</button>
+    </div>
+  }
+
+  @for (item of history(); track $index) {
+    <div class="entry" [class.failed]="item.failed">
+      <div class="q">
+        <mat-icon>help_outline</mat-icon>
+        <span>{{ item.question }}</span>
+        <span class="meta">
+          {{ item.mode === "multi" ? "multi" : "single" }} · {{ item.seconds.toFixed(1) }} s
+        </span>
+      </div>
+
+      <pre class="a">{{ item.answer }}</pre>
+    </div>
+  }
+</div>

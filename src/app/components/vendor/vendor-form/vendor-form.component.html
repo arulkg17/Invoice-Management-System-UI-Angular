@@ -1,0 +1,49 @@
+<div class="page narrow">
+  <div class="page-header">
+    <h2>{{ isEdit() ? "Edit Vendor" : "New Vendor" }}</h2>
+  </div>
+
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Vendor Code</mat-label>
+        <input matInput formControlName="vendorCode" maxlength="20" />
+        @if (form.controls.vendorCode.hasError("required")) {
+          <mat-error>Code is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Vendor Name</mat-label>
+        <input matInput formControlName="vendorName" maxlength="100" />
+        @if (form.controls.vendorName.hasError("required")) {
+          <mat-error>Name is required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>City</mat-label>
+        <input matInput formControlName="city" maxlength="50" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>State</mat-label>
+        <input matInput formControlName="state" maxlength="50" />
+      </mat-form-field>
+
+      <mat-checkbox formControlName="isActive" class="full">Active</mat-checkbox>
+    </div>
+
+    <div class="buttons">
+      <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">
+        {{ isEdit() ? "Update" : "Save" }}
+      </button>
+
+      <button mat-button type="button" (click)="goBack()">Close</button>
+    </div>
+  </form>
+</div>

@@ -17,6 +17,7 @@
     <button mat-menu-item routerLink="/masters/items">Items</button>
     <button mat-menu-item routerLink="/masters/customers">Customers</button>
     <button mat-menu-item routerLink="/masters/vendors">Vendors</button>
+    <button mat-menu-item routerLink="/masters/users">Users</button>
   </mat-menu>
 
   <!-- Transactions Menu -->
@@ -41,7 +42,16 @@
   <!-- Other Menus -->
   <button mat-button>Processings</button>
   <button mat-button>Reports</button>
-  <button mat-button>Utilities</button>
+  <button
+    mat-button
+    [matMenuTriggerFor]="utilMenu"
+    routerLinkActive="active-link"
+  >
+    Utilities
+  </button>
+  <mat-menu #utilMenu="matMenu">
+    <button mat-menu-item routerLink="/utilities/ai-assistant">AI Assistant</button>
+  </mat-menu>
 
   <!-- Push user to right -->
   <span class="spacer"></span>
