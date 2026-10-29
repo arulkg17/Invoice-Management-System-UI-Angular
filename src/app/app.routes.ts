@@ -11,7 +11,11 @@ export const routes: Routes = [
     path: 'masters',
     canActivate: [authGuard],
     children: [
-      { path: 'categories', loadComponent: () => import('./components/item-list/item-list.component').then(m => m.ItemListComponent) },
+      // Categories
+      { path: 'categories', loadComponent: () => import('./components/category/category-list/category-list.component').then(m => m.CategoryListComponent) },
+      { path: 'categories/create', loadComponent: () => import('./components/category/category-form/category-form.component').then(m => m.CategoryFormComponent) },
+      { path: 'categories/edit/:id', loadComponent: () => import('./components/category/category-form/category-form.component').then(m => m.CategoryFormComponent) },
+      // Itemmasters 
       { path: 'items', loadComponent: () => import('./components/item-list/item-list.component').then(m => m.ItemListComponent) },
       { path: 'items/create', loadComponent: () => import('./components/item-form/item-form.component').then(m => m.ItemFormComponent) },
       { path: 'items/edit/:id', loadComponent: () => import('./components/item-form/item-form.component').then(m => m.ItemFormComponent) },
