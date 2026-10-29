@@ -28,7 +28,30 @@
           <mat-error>Enter a valid email</mat-error>
         }
       </mat-form-field>
+      @if (!isEdit()) {
+        <mat-form-field appearance="outline">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            type="password"
+            formControlName="password"
+            autocomplete="new-password"
+            maxlength="100"
+          />
 
+          @if (
+            form.controls.password.touched &&
+            form.controls.password.hasError("required")
+          ) {
+            <mat-error>Password is required</mat-error>
+          } @else if (
+            form.controls.password.touched &&
+            form.controls.password.hasError("minlength")
+          ) {
+            <mat-error>Password must be at least 8 characters.</mat-error>
+          }
+        </mat-form-field>
+      }
       <mat-checkbox formControlName="isActive">Active</mat-checkbox>
 
       <div class="section">Name</div>
@@ -77,8 +100,15 @@
 
       <mat-form-field appearance="outline">
         <mat-label>Date of Birth</mat-label>
-        <input matInput [matDatepicker]="dobPicker" formControlName="dateOfBirth" />
-        <mat-datepicker-toggle matSuffix [for]="dobPicker"></mat-datepicker-toggle>
+        <input
+          matInput
+          [matDatepicker]="dobPicker"
+          formControlName="dateOfBirth"
+        />
+        <mat-datepicker-toggle
+          matSuffix
+          [for]="dobPicker"
+        ></mat-datepicker-toggle>
         <mat-datepicker #dobPicker></mat-datepicker>
       </mat-form-field>
 
@@ -131,7 +161,12 @@
     </div>
 
     <div class="buttons">
-      <button mat-flat-button color="primary" type="submit" [disabled]="isSaving()">
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        [disabled]="isSaving()"
+      >
         {{ isEdit() ? "Update" : "Save" }}
       </button>
 

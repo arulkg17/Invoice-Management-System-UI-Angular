@@ -1,6 +1,10 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
 import { MatButtonModule } from '@angular/material/button';
@@ -46,9 +50,15 @@ export class UserFormComponent implements OnInit {
   readonly form = this.fb.group({
     // Account
     userName: ['', [Validators.required, Validators.maxLength(50)]],
-    email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
+    email: [
+      '',
+      [Validators.required, Validators.email, Validators.maxLength(100)],
+    ],
+    password: [
+      '',
+      [Validators.required, Validators.minLength(8), Validators.maxLength(100)],
+    ],
     isActive: [true],
-
     // Name
     firstName: ['', [Validators.required, Validators.maxLength(50)]],
     middleName: ['', Validators.maxLength(50)],
@@ -74,6 +84,8 @@ export class UserFormComponent implements OnInit {
 
     if (id > 0) {
       this.userId.set(id);
+      this.form.controls.password.clearValidators();
+      this.form.controls.password.updateValueAndValidity();
       await this.load(id);
     }
   }
@@ -136,7 +148,8 @@ export class UserFormComponent implements OnInit {
       middleName: v.middleName.trim() || null,
       lastName: v.lastName.trim(),
       // blank display name -> "First Last"
-      displayName: v.displayName.trim() || `${v.firstName.trim()} ${v.lastName.trim()}`,
+      displayName:
+        v.displayName.trim() || `${v.firstName.trim()} ${v.lastName.trim()}`,
       phoneNumber: v.phoneNumber.trim(),
       alternatePhone: v.alternatePhone.trim() || null,
       addressLine1: v.addressLine1.trim(),
@@ -147,6 +160,7 @@ export class UserFormComponent implements OnInit {
       country: v.country.trim(),
       dateOfBirth: v.dateOfBirth ? toApiDate(v.dateOfBirth) : null,
       isActive: v.isActive,
+      ...(!this.isEdit() ? { password: v.password } : {}),
     };
 
     this.isSaving.set(true);
@@ -161,7 +175,11 @@ export class UserFormComponent implements OnInit {
         return;
       }
 
-      this.notify(this.isEdit() ? 'User updated successfully' : 'User created successfully');
+      this.notify(
+        this.isEdit()
+          ? 'User updated successfully'
+          : 'User created successfully',
+      );
 
       this.form.markAsPristine();
       this.goBack();

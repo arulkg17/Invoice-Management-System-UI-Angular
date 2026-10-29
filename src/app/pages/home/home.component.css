@@ -87,3 +87,38 @@ h1 {
   text-align: center;
   width: 100%;
 }
+.auth-links {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.auth-links p {
+  margin: 12px 0;
+}
+
+.auth-links a {
+  color: #1565c0;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.auth-links {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.auth-links p {
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+.auth-links a {
+  color: #1565c0;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.auth-links a:hover {
+  color: #0d47a1;
+}

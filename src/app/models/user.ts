@@ -32,6 +32,7 @@ export interface UserFilter {
 export interface UserRequest {
   userName: string;
   email: string;
+  password?: string; 
   firstName: string;
   middleName: string | null;
   lastName: string;
