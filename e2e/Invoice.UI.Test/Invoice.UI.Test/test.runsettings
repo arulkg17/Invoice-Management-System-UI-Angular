@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <!-- One test at a time: the business-flow tests share data and run in order. Raise it later for the independent master tests. -->
+  <NUnit>
+    <NumberOfTestWorkers>1</NumberOfTestWorkers>
+  </NUnit>
+  <Playwright>
+    <BrowserName>chromium</BrowserName>
+    <LaunchOptions>
+      <Headless>true</Headless>
+    </LaunchOptions>
+  </Playwright>
+</RunSettings>

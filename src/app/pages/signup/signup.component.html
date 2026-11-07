@@ -1,1 +1,130 @@
-<p>signup works!</p>
+<div class="signup-container">
+  <div class="signup-card">
+    <h2>Create Student Account</h2>
+
+    <p class="subtitle">Register to access Invoice Management System</p>
+
+    @if (isSaving()) {
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>First Name</mat-label>
+          <input matInput formControlName="firstName" />
+
+          @if (
+            form.controls.firstName.hasError("required") &&
+            form.controls.firstName.touched
+          ) {
+            <mat-error>First name is required.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Last Name</mat-label>
+          <input matInput formControlName="lastName" />
+
+          @if (
+            form.controls.lastName.hasError("required") &&
+            form.controls.lastName.touched
+          ) {
+            <mat-error>Last name is required.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>User Name</mat-label>
+          <input matInput formControlName="userName" />
+
+          @if (
+            form.controls.userName.invalid && form.controls.userName.touched
+          ) {
+            <mat-error>Enter a valid username.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" />
+
+          @if (form.controls.email.invalid && form.controls.email.touched) {
+            <mat-error>Enter a valid email address.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            type="password"
+            formControlName="password"
+            autocomplete="new-password"
+          />
+
+          @if (
+            form.controls.password.hasError("required") &&
+            form.controls.password.touched
+          ) {
+            <mat-error>Password is required.</mat-error>
+          } @else if (
+            form.controls.password.hasError("minlength") &&
+            form.controls.password.touched
+          ) {
+            <mat-error>Minimum 8 characters required.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Confirm Password</mat-label>
+          <input
+            matInput
+            type="password"
+            formControlName="confirmPassword"
+            autocomplete="new-password"
+          />
+
+          @if (
+            form.controls.confirmPassword.hasError("required") &&
+            form.controls.confirmPassword.touched
+          ) {
+            <mat-error>Please confirm your password.</mat-error>
+          } @else if (
+            form.hasError("passwordMismatch") &&
+            form.controls.confirmPassword.touched
+          ) {
+            <mat-error>Passwords do not match.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Phone Number</mat-label>
+          <input matInput formControlName="phoneNumber" />
+
+          @if (
+            form.controls.phoneNumber.invalid &&
+            form.controls.phoneNumber.touched
+          ) {
+            <mat-error>Phone number is required.</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <button
+        mat-raised-button
+        color="primary"
+        type="submit"
+        class="full-width"
+        [disabled]="isSaving()"
+      >
+        {{ isSaving() ? "Creating Account..." : "Create Account" }}
+      </button>
+    </form>
+
+    <div class="login-link">
+      Already have an account?
+      <a routerLink="/home">Login here</a>
+    </div>
+  </div>
+</div>
