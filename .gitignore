@@ -40,3 +40,16 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Visual Studio temporary files
+.vs/
+**/.vs/
+
+# Node modules
+node_modules/
+
+# Playwright generated files
+playwright-report/
+test-results/
+
+
